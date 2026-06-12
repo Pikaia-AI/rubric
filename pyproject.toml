@@ -4,13 +4,18 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "rubric"
-version = "0.1.1"
+version = "0.2.0"
 description = "Pluggable interview metric framework — drop a folder under metrics/, get a metric"
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
 authors = [{ name = "Pikaia" }]
 keywords = ["interview", "metric", "evaluation", "voice-agent", "bench"]
+
+[project.optional-dependencies]
+# LLM-judge built-in metrics (pkbench, outline-coverage). Pure-Python
+# deterministic metrics like parrot-check don't need these.
+llm = ["anthropic>=0.40", "openai>=1.40,<2.0"]
 
 [project.urls]
 Homepage = "https://github.com/Pikaia-AI/rubric"
@@ -31,4 +36,6 @@ exclude = ["tests*", "metrics*"]
     "*/README.md",
     "*/examples/*",
     "*/examples/**/*",
+    "*/data/*",
+    "*/data/**/*",
 ]
