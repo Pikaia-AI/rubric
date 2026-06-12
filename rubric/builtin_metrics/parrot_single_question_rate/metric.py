@@ -17,7 +17,7 @@ META = {
     ),
     "level": "transcript",
     "group": "Parrot Check",
-    "homepage": "https://github.com/Pikaia-AI/rubric",
+    "homepage": "https://github.com/Pikaia-AI/rubric/tree/main/rubric/builtin_metrics/parrot_single_question_rate",
     "deterministic": True,
     "dims": [
         {

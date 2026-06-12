@@ -18,7 +18,7 @@ META = {
     ),
     "level": "transcript",
     "group": "Outline Coverage",
-    "homepage": "https://github.com/Pikaia-AI/rubric",
+    "homepage": "https://github.com/Pikaia-AI/rubric/tree/main/rubric/builtin_metrics/outline_outline_adherence",
     "deterministic": False,
     "needs_api_key": "BAI_API_KEY",
     "dims": [

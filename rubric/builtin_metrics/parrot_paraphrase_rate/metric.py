@@ -21,7 +21,7 @@ META = {
     ),
     "level": "transcript",
     "group": "Parrot Check",
-    "homepage": "https://github.com/Pikaia-AI/rubric",
+    "homepage": "https://github.com/Pikaia-AI/rubric/tree/main/rubric/builtin_metrics/parrot_paraphrase_rate",
     "deterministic": True,
     "dims": [
         {

@@ -14,7 +14,7 @@ META = {
     "description": _pk.dim_description(DIM_KEY),
     "level": "transcript",
     "group": "Pikaia-Bench",
-    "homepage": "https://github.com/Pikaia-AI/pikaia_benchmarking",
+    "homepage": "https://github.com/Pikaia-AI/rubric/tree/main/rubric/builtin_metrics/pkbench_info_consistency",
     "paper": f"pikaia_benchmarking 维度集{_pk.DIMENSION_SET_VERSION} @ {_pk.SOURCE_COMMIT} (snapshot {_pk.SNAPSHOT_DATE})",
     "deterministic": False,
     "needs_api_key": "ANTHROPIC_API_KEY",
