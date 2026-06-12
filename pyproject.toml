@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rubric"
+version = "0.1.0"
+description = "Pluggable interview metric framework — drop a folder under metrics/, get a metric"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Pikaia" }]
+keywords = ["interview", "metric", "evaluation", "voice-agent", "bench"]
+
+[project.urls]
+Homepage = "https://github.com/Pikaia-AI/rubric"
+
+[project.scripts]
+rubric = "rubric.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["rubric*"]
+exclude = ["tests*", "metrics*"]
+
+[tool.setuptools.package-data]
+"rubric" = ["py.typed"]
