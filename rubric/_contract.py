@@ -108,6 +108,8 @@ class Metric:
     meta: dict
     score: Callable
     source_dir: str = ""
+    module: Any = None  # the imported metric.py module — adapters can reach
+                       # for optional extras like score_partial / per-dim helpers
 
     @property
     def id(self) -> str:

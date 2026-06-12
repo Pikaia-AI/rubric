@@ -76,7 +76,7 @@ def _build_metric(metric_dir: pathlib.Path) -> Metric:
         raise PluginError(f"{metric_dir.name}/metric.py missing score()")
     meta = mod.META
     validate_meta(meta, source=f"{metric_dir.name}/metric.py")
-    return Metric(meta=meta, score=mod.score, source_dir=str(metric_dir))
+    return Metric(meta=meta, score=mod.score, source_dir=str(metric_dir), module=mod)
 
 
 def load_all(
