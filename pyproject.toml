@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "rubric"
-version = "0.2.0"
+version = "0.3.0"
 description = "Pluggable interview metric framework — drop a folder under metrics/, get a metric"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -36,6 +36,9 @@ exclude = ["tests*", "metrics*"]
     "*/README.md",
     "*/examples/*",
     "*/examples/**/*",
-    "*/data/*",
-    "*/data/**/*",
+]
+# Shared snapshot data + helpers consumed by the single-dim plugins live here.
+"rubric.internal" = [
+    "data/*",
+    "data/**/*",
 ]

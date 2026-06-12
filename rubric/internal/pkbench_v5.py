@@ -1,17 +1,17 @@
-"""Pikaia-Bench (PKBench) — 21-dim LLM-judge rubric, ported from
-github.com/Pikaia-AI/pikaia_benchmarking (维度集 v5, 2026-04-20).
+"""PKBench v5 shared data + scoring helper.
 
-To stay independent of bench's Prisma DB, the 21 dim rubrics + the
-prompt template are snapshotted in `data/dimensions_v5.json` here. Each
-dim gets its own Claude call with the criteria-injected prompt — matching
-pikaia_benchmarking's evaluation-engine.ts behaviour exactly so that
-human/machine alignment data stays apples-to-apples.
+21 dims + verbatim prompt template, snapshotted from
+github.com/Pikaia-AI/pikaia_benchmarking (commit cbd08bb, 2026-05-07).
+
+The 21 single-dim plugins under `rubric.builtin_metrics.pkbench_<key>/`
+all import `score_dim(dim_key, turns)` from here so the LLM-call protocol
++ criteria text stay in one place.
 
 Resync workflow when bench updates dimensions:
   cd /tmp && rm -rf pikaia_benchmarking && \\
     gh repo clone Pikaia-AI/pikaia_benchmarking
   cp /tmp/pikaia_benchmarking/prisma/seed-data/dimensions.json \\
-     rubric/builtin_metrics/pkbench/data/dimensions_v5.json
+     rubric/internal/data/pkbench_dimensions_v5.json
   # bump SOURCE_COMMIT below
   # diff PROMPT_TEMPLATE against /tmp/pikaia_benchmarking/prisma/seed.ts
 """
@@ -22,8 +22,7 @@ import pathlib
 
 from rubric.helpers import ask_claude, extract_json
 
-# ── Snapshot pins ────────────────────────────────────────────────────────────
-SOURCE_COMMIT = "cbd08bb"  # pikaia_benchmarking commit when this snapshot was taken
+SOURCE_COMMIT = "cbd08bb"
 SNAPSHOT_DATE = "2026-05-07"
 DIMENSION_SET_VERSION = "v5"
 
@@ -47,10 +46,7 @@ PROMPT_TEMPLATE = """你是一个专业的用户访谈质量评测专家。请�
 请基于访谈大纲和转录文本进行评估。"""
 
 
-# ── Dim metadata: 中文名 → 英文 key + 英文 label + per-dim description.
-# v5 (bench.trooly.ai 维度集 v5, 2026-04-20 "prompt简化"):
-#   - REMOVED from v1: 停顿频率, 核心信息完整性, 核心问题深度, 事实观点区分
-#   - ADDED in v5:    一题一问 (one_question_per_turn)
+# Chinese name → English key for plugin/dim id.
 ZH_TO_KEY = {
     # 用户质量 (10)
     "回答长度": "answer_length",
@@ -103,7 +99,7 @@ ZH_TO_EN = {
 }
 
 # Per-dim short Chinese description (ported from pikaia_eval/dashboard.html
-# DESCRIPTIONS dict). Single source of truth for the bench Rubric tab.
+# DESCRIPTIONS dict). Single source of truth lives here.
 ZH_TO_DESC = {
     "回答长度": "平均每轮回答长度（字数），反映受访者的表达流畅度。",
     "回答扩展": "受访者是否主动补充信息，反映其积极配合度。",
@@ -128,52 +124,40 @@ ZH_TO_DESC = {
     "信息一致": "整段访谈中是否无逻辑或事实性矛盾/前后不一致。",
 }
 
-
-# ── Load + validate snapshot ─────────────────────────────────────────────────
-_DATA = pathlib.Path(__file__).parent / "data" / "dimensions_v5.json"
+_DATA = pathlib.Path(__file__).parent / "data" / "pkbench_dimensions_v5.json"
 with _DATA.open(encoding="utf-8") as _f:
-    _DIMS_RAW = json.load(_f)  # list of {group, category, name, criteria0/1/2, sortOrder}
+    DIMS_RAW = json.load(_f)
 
-_missing_key = [d["name"] for d in _DIMS_RAW if d["name"] not in ZH_TO_KEY]
-_missing_en = [d["name"] for d in _DIMS_RAW if d["name"] not in ZH_TO_EN]
-if _missing_key or _missing_en:
+# Validate snapshot completeness
+_missing_k = [d["name"] for d in DIMS_RAW if d["name"] not in ZH_TO_KEY]
+_missing_e = [d["name"] for d in DIMS_RAW if d["name"] not in ZH_TO_EN]
+if _missing_k or _missing_e:
     raise ValueError(
-        f"pkbench: snapshot has new dims requiring ZH_TO_KEY/ZH_TO_EN/ZH_TO_DESC entries. "
-        f"missing keys: {_missing_key}, missing en: {_missing_en}"
+        f"pkbench snapshot has new dims requiring ZH_TO_KEY/ZH_TO_EN/ZH_TO_DESC: "
+        f"keys={_missing_k}, en={_missing_e}"
     )
 
-
-# ── rubric META ──────────────────────────────────────────────────────────────
-META = {
-    "id": "pkbench",
-    "name": "Pikaia-Bench",
-    "version": "5.0.0",
-    "description": (
-        f"21-dim Chinese interview-quality rubric (维度集 {DIMENSION_SET_VERSION}, "
-        f"snapshot {SNAPSHOT_DATE}, source commit {SOURCE_COMMIT}). One Claude "
-        f"call per dim with criteria-injected prompt."
-    ),
-    "level": "transcript",
-    "homepage": "https://github.com/Pikaia-AI/pikaia_benchmarking",
-    "paper": f"pikaia_benchmarking 维度集{DIMENSION_SET_VERSION} @ {SOURCE_COMMIT} (snapshot {SNAPSHOT_DATE})",
-    "deterministic": False,
-    "needs_api_key": "ANTHROPIC_API_KEY",
-    "dims": [
-        {
-            "key": ZH_TO_KEY[d["name"]],
-            "label": {"zh": d["name"], "en": ZH_TO_EN[d["name"]]},
-            "score_range": (0, 2),  # 0/1/2 — caller normalizes if needed
-            "higher_is_better": True,
-            "description": ZH_TO_DESC.get(d["name"], ""),
-            "category": d["group"],  # 用户质量 / 主持人质量 / 结果质量
-        }
-        for d in _DIMS_RAW
-    ],
-}
+# By-key lookup
+KEY_TO_DIM = {ZH_TO_KEY[d["name"]]: d for d in DIMS_RAW}
 
 
-# ── Scoring ──────────────────────────────────────────────────────────────────
-def _build_user_content(turns, outline=""):
+def dim_zh(dim_key: str) -> str:
+    return KEY_TO_DIM[dim_key]["name"]
+
+
+def dim_en(dim_key: str) -> str:
+    return ZH_TO_EN[dim_zh(dim_key)]
+
+
+def dim_category(dim_key: str) -> str:
+    return KEY_TO_DIM[dim_key]["group"]
+
+
+def dim_description(dim_key: str) -> str:
+    return ZH_TO_DESC.get(dim_zh(dim_key), "")
+
+
+def _build_user_content(turns, outline: str = "") -> str:
     transcript = "\n".join(f"{t['role']}: {t['text']}" for t in turns)
     parts = []
     if outline:
@@ -182,8 +166,9 @@ def _build_user_content(turns, outline=""):
     return "\n".join(parts)
 
 
-def _score_one_dim(d, user_content):
+def score_dim(dim_key: str, turns) -> float:
     """ONE LLM call for ONE dim — matches pikaia_benchmarking's protocol."""
+    d = KEY_TO_DIM[dim_key]
     system = (
         PROMPT_TEMPLATE
         .replace("{{dimension_name}}", d["name"])
@@ -191,29 +176,16 @@ def _score_one_dim(d, user_content):
         .replace("{{criteria_1}}", d["criteria1"])
         .replace("{{criteria_2}}", d["criteria2"])
     )
-    response = ask_claude(system, user_content, max_tokens=512)
+    response = ask_claude(system, _build_user_content(turns), max_tokens=512)
     parsed = extract_json(response)
     if parsed is None:
         return 0.0
-    score = parsed.get("score", 0)
+    s = parsed.get("score", 0)
     try:
-        return float(score)
+        return float(s)
     except (TypeError, ValueError):
         return 0.0
 
 
-def score(turns):
-    """Score all v5 dims for a transcript. Returns {dim_key: 0/1/2}."""
-    user_content = _build_user_content(turns)
-    return {ZH_TO_KEY[d["name"]]: _score_one_dim(d, user_content) for d in _DIMS_RAW}
-
-
-def score_partial(turns, only_dim_keys):
-    """Score ONLY the specified dim keys (for incremental backfill)."""
-    only = set(only_dim_keys)
-    user_content = _build_user_content(turns)
-    return {
-        ZH_TO_KEY[d["name"]]: _score_one_dim(d, user_content)
-        for d in _DIMS_RAW
-        if ZH_TO_KEY[d["name"]] in only
-    }
+# All dim keys, ordered same as snapshot (sortOrder).
+DIM_KEYS = [ZH_TO_KEY[d["name"]] for d in DIMS_RAW]

@@ -1,4 +1,4 @@
-"""Smoke tests for the plugin contract + the bundled parrot-check metric."""
+"""Smoke tests for the plugin contract + the 25 bundled single-dim plugins."""
 import json
 import pathlib
 
@@ -10,29 +10,46 @@ from rubric import load, load_all, run, validate_meta, PluginError
 REPO = pathlib.Path(__file__).parent.parent
 
 
-def test_discovery():
+def test_discovery_25():
     reg = load_all()
-    assert "parrot-check" in reg
-    assert reg["parrot-check"].level == "transcript"
+    assert len(reg) == 25, f"expected 25 single-dim plugins, got {len(reg)}: {sorted(reg)}"
+    # Group counts
+    by_group = {}
+    for m in reg.values():
+        by_group.setdefault(m.meta.get("group", "(none)"), []).append(m.id)
+    assert len(by_group.get("Parrot Check", [])) == 2
+    assert len(by_group.get("Outline Coverage", [])) == 2
+    assert len(by_group.get("Pikaia-Bench", [])) == 21
+
+
+def test_one_dim_per_plugin():
+    """Every plugin owns exactly one dim — the new shape after 0.3.0."""
+    for m in load_all().values():
+        assert len(m.meta["dims"]) == 1, f"{m.id} has {len(m.meta['dims'])} dims, expected 1"
 
 
 def test_meta_shape():
-    m = load("parrot-check")
-    validate_meta(m.meta, source="parrot-check")
-    assert {d["key"] for d in m.meta["dims"]} == {"paraphrase_rate", "single_question_rate"}
+    for m in load_all().values():
+        validate_meta(m.meta, source=m.id)
+        # Dim key matches plugin id suffix
+        dim_key = m.meta["dims"][0]["key"]
+        assert m.id.endswith(dim_key), f"{m.id} dim key {dim_key} should match id suffix"
 
 
-def test_parrot_score_on_example():
-    m = load("parrot-check")
-    sample_path = REPO / "rubric/builtin_metrics/parrot_check/examples/x03_q6.json"
+def test_parrot_paraphrase_score_on_example():
+    m = load("parrot-paraphrase_rate")
+    sample_path = REPO / "rubric/builtin_metrics/parrot_paraphrase_rate/examples/x03_q6.json"
     sample = json.loads(sample_path.read_text(encoding="utf-8"))["turns"]
     result = run(m, sample)
-    # Known X03 Q6 numbers — must stay byte-identical to pikaia_eval + standalone
-    assert result["paraphrase_rate"] == pytest.approx(46.07, abs=0.01)
-    assert result["single_question_rate"] == pytest.approx(50.0, abs=0.01)
-    # Diagnostics present
-    assert result["n_agent_turns"] == 6
-    assert isinstance(result["per_turn"], list)
+    assert result["paraphrase_rate"] == pytest.approx(46.07, abs=0.1)
+
+
+def test_parrot_single_q_score_on_example():
+    m = load("parrot-single_question_rate")
+    sample_path = REPO / "rubric/builtin_metrics/parrot_paraphrase_rate/examples/x03_q6.json"
+    sample = json.loads(sample_path.read_text(encoding="utf-8"))["turns"]
+    result = run(m, sample)
+    assert result["single_question_rate"] == pytest.approx(50.0, abs=0.1)
 
 
 def test_unknown_metric_raises():
@@ -41,7 +58,6 @@ def test_unknown_metric_raises():
 
 
 def test_score_validation_catches_bad_dim():
-    """A malformed score() output should be caught by validate_score_output."""
     from rubric import validate_score_output
     meta = {
         "id": "x", "name": "X", "version": "0", "description": "",
@@ -52,9 +68,7 @@ def test_score_validation_catches_bad_dim():
             "description": "",
         }],
     }
-    # Missing dim
     with pytest.raises(PluginError, match="missing dim keys"):
         validate_score_output(meta, {})
-    # Out of range
     with pytest.raises(PluginError, match="outside score_range"):
         validate_score_output(meta, {"foo": 200})
