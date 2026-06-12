@@ -18,6 +18,11 @@ META = {
         "coverage = covered_q / total_planned_q × 5."
     ),
     "level": "transcript",
+    "io": {
+        "input": "turns: list[{role, text}]\noutline: str (JSON of interview_state.outline tree)",
+        "output": "{research_question_coverage: float ∈ [0, 5]}",
+    },
+
     "group": "Outline Coverage",
     "homepage": "https://github.com/Pikaia-AI/rubric/tree/main/rubric/builtin_metrics/outline_research_question_coverage",
     "deterministic": False,

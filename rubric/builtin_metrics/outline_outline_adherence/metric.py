@@ -17,6 +17,11 @@ META = {
         "much the agent stayed on outline vs improvised."
     ),
     "level": "transcript",
+    "io": {
+        "input": "turns: list[{role, text}]\noutline: str (JSON of interview_state.outline tree)",
+        "output": "{outline_adherence: float ∈ [0, 5]}",
+    },
+
     "group": "Outline Coverage",
     "homepage": "https://github.com/Pikaia-AI/rubric/tree/main/rubric/builtin_metrics/outline_outline_adherence",
     "deterministic": False,

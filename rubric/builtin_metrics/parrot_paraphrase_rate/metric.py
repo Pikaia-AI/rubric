@@ -20,6 +20,11 @@ META = {
         "Higher = less literal echo. Char-level Chinese, no LLM."
     ),
     "level": "transcript",
+    "io": {
+        "input": "turns: list[{role: 'assistant'|'user'|..., text: str}]",
+        "output": "{paraphrase_rate: float ∈ [0, 100]}",
+    },
+
     "group": "Parrot Check",
     "homepage": "https://github.com/Pikaia-AI/rubric/tree/main/rubric/builtin_metrics/parrot_paraphrase_rate",
     "deterministic": True,

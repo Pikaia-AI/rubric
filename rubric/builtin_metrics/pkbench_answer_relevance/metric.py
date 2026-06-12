@@ -13,6 +13,10 @@ META = {
     "version": "5.0.0",
     "description": _pk.dim_description(DIM_KEY),
     "level": "transcript",
+    "io": {
+        "input": "turns: list[{role, text}]",
+        "output": "{" + DIM_KEY + ": float ∈ {0, 1, 2}}",
+    },
     "group": "Pikaia-Bench",
     "homepage": "https://github.com/Pikaia-AI/rubric/tree/main/rubric/builtin_metrics/pkbench_answer_relevance",
     "paper": f"pikaia_benchmarking 维度集{_pk.DIMENSION_SET_VERSION} @ {_pk.SOURCE_COMMIT} (snapshot {_pk.SNAPSHOT_DATE})",

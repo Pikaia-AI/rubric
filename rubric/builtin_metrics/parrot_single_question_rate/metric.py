@@ -16,6 +16,11 @@ META = {
         "whole reply (not just first sentence). No LLM."
     ),
     "level": "transcript",
+    "io": {
+        "input": "turns: list[{role, text}]",
+        "output": "{single_question_rate: float ∈ [0, 100]}",
+    },
+
     "group": "Parrot Check",
     "homepage": "https://github.com/Pikaia-AI/rubric/tree/main/rubric/builtin_metrics/parrot_single_question_rate",
     "deterministic": True,

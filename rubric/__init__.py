@@ -26,7 +26,7 @@ from ._contract import (
 from ._loader import load_all, load, default_metrics_dir, find_metric_dirs
 from ._runner import run, run_all
 
-__version__ = "0.3.2"
+__version__ = "0.3.3"
 
 __all__ = [
     "__version__",
