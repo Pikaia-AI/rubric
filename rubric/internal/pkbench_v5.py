@@ -157,6 +157,27 @@ def dim_description(dim_key: str) -> str:
     return ZH_TO_DESC.get(dim_zh(dim_key), "")
 
 
+def dim_formula(dim_key: str) -> str:
+    """Human-readable formula + criteria, injected into the plugin META."""
+    d = KEY_TO_DIM[dim_key]
+    return (
+        f"单次 LLM 调用 (Claude Sonnet via ask_claude → 自动 b.ai 回退):\n\n"
+        f"  system = PROMPT_TEMPLATE\n"
+        f"           .replace('{{{{dimension_name}}}}', '{d['name']}')\n"
+        f"           .replace('{{{{criteria_0}}}}', criteria0)\n"
+        f"           .replace('{{{{criteria_1}}}}', criteria1)\n"
+        f"           .replace('{{{{criteria_2}}}}', criteria2)\n"
+        f"  user   = '## 转录文本 (Transcript)\\n<role>: <text>\\n...'\n\n"
+        f"LLM 返回 JSON: {{\"score\": 0|1|2, \"thinking\": \"...\"}}\n"
+        f"解析 score 字段为 float, 失败返回 0.0\n\n"
+        f"评分标准 (snapshot {DIMENSION_SET_VERSION} @ {SOURCE_COMMIT}):\n\n"
+        f"  0 分: {d['criteria0']}\n\n"
+        f"  1 分: {d['criteria1']}\n\n"
+        f"  2 分: {d['criteria2']}\n\n"
+        f"范围 [0, 2] (server normalizes to 0-5 for dashboard)"
+    )
+
+
 def _build_user_content(turns, outline: str = "") -> str:
     transcript = "\n".join(f"{t['role']}: {t['text']}" for t in turns)
     parts = []

@@ -26,6 +26,16 @@ META = {
             "score_range": (0, 100),
             "higher_is_better": True,
             "description": "% agent turns asking ≤ 1 question.",
+            "formula": """
+逐 agent turn (须有前置 user turn 且 reply 非空):
+
+  q_count = reply.count('?') + reply.count('？')   ← 整段回复, 不只首句
+  flag    = 1.0 if q_count ≤ 1 else 0.0
+
+聚合:
+  single_question_rate = mean(flag) × 100
+
+范围 [0, 100], 越高越好""",
             "category": "提问质量",
         }
     ],

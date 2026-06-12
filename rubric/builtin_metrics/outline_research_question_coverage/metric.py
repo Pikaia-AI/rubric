@@ -29,6 +29,23 @@ META = {
             "score_range": (0, 5),
             "higher_is_better": True,
             "description": "实际访谈对大纲中预设问题的覆盖比例 × 5.",
+            "formula": """
+一次性 LLM 对齐 (b.ai/Haiku, 缓存 (turns_id, outline) 与 outline-outline_adherence 共享):
+
+  questions   = flatten outline.root_node.children → [{q_id, q_text, sec_id, sec_name}, ...]
+  alignments  = LLM([prompt + outline + transcript])
+                → [{turn_idx, q_id|null, confidence}, ...]   ← 每条 interviewer turn 一行
+
+聚合:
+  planned_q   = {q.q_id for q in questions}
+  covered_q   = {a.q_id for a in alignments if a.q_id ∈ planned_q}
+  coverage    = |covered_q| / max(1, |planned_q|)
+  research_question_coverage = coverage × 5
+
+边界:
+  outline 空 / 无 interviewer turn / 对齐 JSON 解析失败 → 返回 0.0
+
+范围 [0, 5], 越高越好""",
             "category": "结果质量",
         }
     ],

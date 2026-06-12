@@ -25,6 +25,7 @@ META = {
             "score_range": (0, 2),
             "higher_is_better": True,
             "description": _pk.dim_description(DIM_KEY),
+            "formula": _pk.dim_formula(DIM_KEY),
             "category": _pk.dim_category(DIM_KEY),
         }
     ],
