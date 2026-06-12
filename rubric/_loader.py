@@ -9,22 +9,42 @@ from typing import Iterable
 from ._contract import Metric, PluginError, validate_meta
 
 
+def builtin_metrics_dir() -> pathlib.Path:
+    """Built-in metrics that ship inside the package."""
+    return pathlib.Path(__file__).parent / "builtin_metrics"
+
+
 def default_metrics_dir() -> pathlib.Path:
-    """Return <repo>/metrics/ for an in-tree run (sibling of the rubric package)."""
+    """Repo-root `metrics/` for external plugins in dev (sibling of the rubric package).
+
+    Most consumers want `find_metric_dirs()` with no args — that returns built-ins
+    plus this folder if it exists.
+    """
     return pathlib.Path(__file__).parent.parent / "metrics"
 
 
-def find_metric_dirs(metrics_dir: str | pathlib.Path | None = None) -> list[pathlib.Path]:
-    """Return all immediate sub-dirs of `metrics/` that contain a `metric.py`."""
-    root = pathlib.Path(metrics_dir) if metrics_dir else default_metrics_dir()
+def _scan(root: pathlib.Path) -> list[pathlib.Path]:
     if not root.is_dir():
         return []
-    return sorted(
+    return [
         p for p in root.iterdir()
         if p.is_dir()
         and not p.name.startswith((".", "_"))
         and (p / "metric.py").is_file()
-    )
+    ]
+
+
+def find_metric_dirs(metrics_dir: str | pathlib.Path | None = None) -> list[pathlib.Path]:
+    """Return all metric plugin dirs.
+
+    With no arg: searches both `builtin_metrics/` (always) and the external
+    `metrics/` next to the package (if present in source tree).
+    With an arg: only searches the given path (overrides defaults).
+    """
+    if metrics_dir is not None:
+        return sorted(_scan(pathlib.Path(metrics_dir)))
+    dirs = _scan(builtin_metrics_dir()) + _scan(default_metrics_dir())
+    return sorted(set(dirs))
 
 
 def _load_module(metric_dir: pathlib.Path):

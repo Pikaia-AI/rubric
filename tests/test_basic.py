@@ -24,7 +24,7 @@ def test_meta_shape():
 
 def test_parrot_score_on_example():
     m = load("parrot-check")
-    sample_path = REPO / "metrics/parrot_check/examples/x03_q6.json"
+    sample_path = REPO / "rubric/builtin_metrics/parrot_check/examples/x03_q6.json"
     sample = json.loads(sample_path.read_text(encoding="utf-8"))["turns"]
     result = run(m, sample)
     # Known X03 Q6 numbers — must stay byte-identical to pikaia_eval + standalone

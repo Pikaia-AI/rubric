@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "rubric"
-version = "0.1.0"
+version = "0.1.1"
 description = "Pluggable interview metric framework — drop a folder under metrics/, get a metric"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -22,5 +22,13 @@ rubric = "rubric.cli:main"
 include = ["rubric*"]
 exclude = ["tests*", "metrics*"]
 
+# Ship built-in metrics (metric.py + README.md + examples/) with the wheel
+# so `pip install rubric` already includes parrot-check etc.
 [tool.setuptools.package-data]
 "rubric" = ["py.typed"]
+"rubric.builtin_metrics" = [
+    "*/metric.py",
+    "*/README.md",
+    "*/examples/*",
+    "*/examples/**/*",
+]
