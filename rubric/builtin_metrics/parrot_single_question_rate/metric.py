@@ -27,15 +27,15 @@ META = {
             "higher_is_better": True,
             "description": "% agent turns asking ≤ 1 question.",
             "formula": """
-逐 agent turn (须有前置 user turn 且 reply 非空):
+For each agent turn t with non-empty preceding user turn u_t, let
+  q(t)    = count('?' + '？' in t.reply)                       (whole reply, not just first sentence)
+  flag(t) = 𝟙[q(t) ≤ 1]
 
-  q_count = reply.count('?') + reply.count('？')   ← 整段回复, 不只首句
-  flag    = 1.0 if q_count ≤ 1 else 0.0
+single_question_rate = 100 · (1/|T|) · Σ_{t ∈ T} flag(t)
 
-聚合:
-  single_question_rate = mean(flag) × 100
+where T = { t : valid assistant turns }
 
-范围 [0, 100], 越高越好""",
+Range: [0, 100], higher = better. No LLM.""",
             "category": "提问质量",
         }
     ],

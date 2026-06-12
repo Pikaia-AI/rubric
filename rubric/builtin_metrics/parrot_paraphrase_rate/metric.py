@@ -31,25 +31,18 @@ META = {
             "higher_is_better": True,
             "description": "100 − avg Echo Ratio over agent turns. Higher = less literal echo of user's words.",
             "formula": """
-逐 agent turn (须有前置 user turn 且 reply 非空):
+For each agent turn t with non-empty preceding user turn u_t, let
+  H_t      = first sentence of t.reply, truncated at first .?！?! within
+             first 30 chars, else first 30 chars
+  clean(x) = x with punct + whitespace removed
+  G(x)     = { clean(x)[i:i+2] : 0 ≤ i < |clean(x)| − 1 }      (char 2-gram set)
+  ER(t)    = 100 · |G(H_t) ∩ G(u_t)| / |G(H_t)|                (single-turn echo ratio)
 
-  head        = reply 截首句 (截到首个 。 ？ ！ ! ? 在前 30 字内, 否则取前 30 字)
-  head_clean  = head 去掉标点和空白
-  user_clean  = 前置 user turn 去掉标点和空白
+paraphrase_rate = 100 − (1/|T|) · Σ_{t ∈ T} ER(t)
 
-  agent_grams = { head_clean[i:i+2] for i in 0..len-1 }    ← 字符 2-gram 集合
-  user_grams  = { user_clean[i:i+2] for i in 0..len-1 }
+where T = { t : t is an assistant turn with valid u_t and |clean(H_t)| ≥ 2 }
 
-  ER          = |agent_grams ∩ user_grams| / |agent_grams| × 100      ← 单 turn Echo Ratio
-
-聚合:
-  paraphrase_rate = 100 − mean(ER over 所有计分的 agent turn)
-
-边界:
-  无前置 user turn 或 head_clean<2 字 → 跳过
-  无可计分 agent turn → 返回 0.0
-
-范围 [0, 100], 越高越好""",
+Range: [0, 100], higher = better. No LLM.""",
             "category": "提问质量",
         }
     ],

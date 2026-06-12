@@ -158,23 +158,28 @@ def dim_description(dim_key: str) -> str:
 
 
 def dim_formula(dim_key: str) -> str:
-    """Human-readable formula + criteria, injected into the plugin META."""
+    """Math-notation formula + criteria text injected into the plugin META.
+
+    Math is the contract; criteria text stays Chinese because the LLM
+    prompt is Chinese — translating would break score parity with the
+    bench source-of-truth.
+    """
     d = KEY_TO_DIM[dim_key]
     return (
-        f"单次 LLM 调用 (Claude Sonnet via ask_claude → 自动 b.ai 回退):\n\n"
-        f"  system = PROMPT_TEMPLATE\n"
-        f"           .replace('{{{{dimension_name}}}}', '{d['name']}')\n"
-        f"           .replace('{{{{criteria_0}}}}', criteria0)\n"
-        f"           .replace('{{{{criteria_1}}}}', criteria1)\n"
-        f"           .replace('{{{{criteria_2}}}}', criteria2)\n"
-        f"  user   = '## 转录文本 (Transcript)\\n<role>: <text>\\n...'\n\n"
-        f"LLM 返回 JSON: {{\"score\": 0|1|2, \"thinking\": \"...\"}}\n"
-        f"解析 score 字段为 float, 失败返回 0.0\n\n"
-        f"评分标准 (snapshot {DIMENSION_SET_VERSION} @ {SOURCE_COMMIT}):\n\n"
-        f"  0 分: {d['criteria0']}\n\n"
-        f"  1 分: {d['criteria1']}\n\n"
-        f"  2 分: {d['criteria2']}\n\n"
-        f"范围 [0, 2] (server normalizes to 0-5 for dashboard)"
+        f"score(transcript) = parse_json(LLM(system, user)).score ∈ {{0, 1, 2}}\n"
+        f"                  ⤳ 0.0 on parse error\n\n"
+        f"system = PROMPT_TEMPLATE with placeholders bound:\n"
+        f"  {{{{dimension_name}}}}  ← '{d['name']}'\n"
+        f"  {{{{criteria_0}}}}     ← criteria[0]\n"
+        f"  {{{{criteria_1}}}}     ← criteria[1]\n"
+        f"  {{{{criteria_2}}}}     ← criteria[2]\n\n"
+        f"user   = '## 转录文本 (Transcript)\\n<role>: <text>\\n...'\n\n"
+        f"criteria (snapshot {DIMENSION_SET_VERSION} @ {SOURCE_COMMIT}):\n"
+        f"  [0] {d['criteria0']}\n"
+        f"  [1] {d['criteria1']}\n"
+        f"  [2] {d['criteria2']}\n\n"
+        f"LLM:   Claude Sonnet (ask_claude, b.ai fallback)\n"
+        f"Range: {{0, 1, 2}} (dashboard normalizes to [0, 5]), higher = better."
     )
 
 

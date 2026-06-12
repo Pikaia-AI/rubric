@@ -29,16 +29,13 @@ META = {
             "higher_is_better": True,
             "description": "主持人发言中实际对齐到大纲的占比 × 5。反映即兴跑题率。",
             "formula": """
-共用 outline-research_question_coverage 的对齐结果 (alignments 来自同一次 Haiku 调用):
+A, planned       = same as outline-research_question_coverage (shared cache hit)
+n_aligned        = |{ a ∈ A : a.q_id ∈ planned }|
+n_judged         = |A|
 
-  n_judged   = len(alignments)
-  n_aligned  = sum(1 for a in alignments if a.q_id ∈ planned_q and a.q_id is not None)
-  adherence  = n_aligned / max(1, n_judged)
-  outline_adherence = adherence × 5
+outline_adherence = 5 · n_aligned / max(1, n_judged)
 
-边界: 同 research_question_coverage
-
-范围 [0, 5], 越高越好""",
+Range: [0, 5], higher = better.""",
             "category": "主持人质量",
         }
     ],
